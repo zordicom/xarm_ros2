@@ -217,6 +217,39 @@ namespace xarm_api
         arm->register_report_data_callback(std::bind(&XArmDriver::_report_data_callback, this, std::placeholders::_1));
         arm->connect();
 
+        // ============================================================
+        // READ SAVED SETTINGS (from Web UI / persistent storage)
+        // ============================================================
+        RCLCPP_INFO(node_->get_logger(), "=== SAVED SETTINGS (from Web UI) ===");
+
+        // Read reduced states which includes fence and rebound
+        int saved_reduced = -1, saved_fence = -1, saved_rebound = -1;
+        arm->get_reduced_states(&saved_reduced, nullptr, nullptr, nullptr, nullptr, &saved_fence, &saved_rebound);
+
+        RCLCPP_INFO(node_->get_logger(),
+            "  collision_sensitivity=%d, reduced_mode=%s, fence_mode=%s, collision_rebound=%s",
+            arm->collision_sensitivity,
+            (saved_reduced == 0) ? "ON" : "OFF",
+            (saved_fence == 0) ? "ON" : "OFF",
+            (saved_rebound == 0) ? "ON" : "OFF");
+
+        // Read F/T collision settings if available
+        int saved_ft_det = -1, saved_ft_reb = -1;
+        arm->get_ft_collision_detection(&saved_ft_det);
+        arm->get_ft_collision_rebound(&saved_ft_reb);
+        if (saved_ft_det >= 0) {
+            RCLCPP_INFO(node_->get_logger(),
+                "  ft_collision_detection=%s, ft_collision_rebound=%s",
+                (saved_ft_det == 1) ? "ON" : "OFF",
+                (saved_ft_reb == 1) ? "ON" : "OFF");
+        }
+        RCLCPP_INFO(node_->get_logger(), "=====================================");
+
+        // ============================================================
+        // APPLY CONTACT MODE OVERRIDES
+        // ============================================================
+        RCLCPP_INFO(node_->get_logger(), "Applying contact mode overrides...");
+
         // Contact mode: Hardware collision detection settings (default: disabled for contact-rich manipulation)
         int collision_sensitivity = 0;
         bool collision_rebound = false;
