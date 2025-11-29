@@ -246,59 +246,61 @@ namespace xarm_api
         RCLCPP_INFO(node_->get_logger(), "=====================================");
 
         // ============================================================
-        // APPLY CONTACT MODE OVERRIDES
+        // OVERRIDE WEB UI SETTINGS (optional, default: false)
         // ============================================================
-        RCLCPP_INFO(node_->get_logger(), "Applying contact mode overrides...");
+        bool override_webui = false;
+        node_->get_parameter_or("override_webui", override_webui, false);
 
-        // Contact mode: Hardware collision detection settings (default: disabled for contact-rich manipulation)
-        int collision_sensitivity = 0;
-        bool collision_rebound = false;
-        bool self_collision_detection = false;
-        node_->get_parameter_or("collision_sensitivity", collision_sensitivity, 0);
-        node_->get_parameter_or("collision_rebound", collision_rebound, false);
-        node_->get_parameter_or("self_collision_detection", self_collision_detection, false);
+        if (override_webui) {
+            RCLCPP_INFO(node_->get_logger(), "override_webui=true: Applying contact mode overrides...");
 
-        arm->set_collision_sensitivity(collision_sensitivity);
-        arm->set_collision_rebound(collision_rebound ? 1 : 0);
-        arm->set_self_collision_detection(self_collision_detection ? 1 : 0);
+            // Contact mode: Hardware collision detection settings (default: disabled for contact-rich manipulation)
+            int collision_sensitivity = 0;
+            bool collision_rebound = false;
+            bool self_collision_detection = false;
+            node_->get_parameter_or("collision_sensitivity", collision_sensitivity, 0);
+            node_->get_parameter_or("collision_rebound", collision_rebound, false);
+            node_->get_parameter_or("self_collision_detection", self_collision_detection, false);
 
-        RCLCPP_INFO(node_->get_logger(),
-            "Collision settings applied: sensitivity=%d, rebound=%d, self_collision=%d",
-            collision_sensitivity, collision_rebound ? 1 : 0, self_collision_detection ? 1 : 0);
+            arm->set_collision_sensitivity(collision_sensitivity);
+            arm->set_collision_rebound(collision_rebound ? 1 : 0);
+            arm->set_self_collision_detection(self_collision_detection ? 1 : 0);
 
-        // Diagnostic: Log what the robot reports for collision/teach sensitivity
-        RCLCPP_INFO(node_->get_logger(),
-            "Robot reports: collision_sensitivity=%d, teach_sensitivity=%d",
-            arm->collision_sensitivity, arm->teach_sensitivity);
-
-        // F/T sensor collision settings (default: disabled for contact-rich manipulation)
-        // Note: requires firmware >= 2.6.103 and F/T sensor installed
-        bool ft_collision_detection = false;
-        bool ft_collision_rebound = false;
-        node_->get_parameter_or("ft_collision_detection", ft_collision_detection, false);
-        node_->get_parameter_or("ft_collision_rebound", ft_collision_rebound, false);
-
-        int ft_det_ret = arm->set_ft_collision_detection(ft_collision_detection ? 1 : 0);
-        int ft_reb_ret = arm->set_ft_collision_rebound(ft_collision_rebound ? 1 : 0);
-
-        if (ft_det_ret == 0 && ft_reb_ret == 0) {
             RCLCPP_INFO(node_->get_logger(),
-                "F/T collision settings applied: detection=%d, rebound=%d",
-                ft_collision_detection ? 1 : 0, ft_collision_rebound ? 1 : 0);
-        } else {
-            RCLCPP_WARN(node_->get_logger(),
-                "F/T collision settings skipped (no sensor or firmware < 2.6.103): detection_ret=%d, rebound_ret=%d",
-                ft_det_ret, ft_reb_ret);
-        }
+                "Collision settings applied: sensitivity=%d, rebound=%d, self_collision=%d",
+                collision_sensitivity, collision_rebound ? 1 : 0, self_collision_detection ? 1 : 0);
 
-        // Reduced mode setting (default: disabled for full speed operation)
-        bool reduced_mode = false;
-        node_->get_parameter_or("reduced_mode", reduced_mode, false);
-        arm->set_reduced_mode(reduced_mode);
-        RCLCPP_INFO(node_->get_logger(),
-            "Reduced mode: %s (speed limits %s)",
-            reduced_mode ? "ON" : "OFF",
-            reduced_mode ? "active" : "disabled");
+            // F/T sensor collision settings (default: disabled for contact-rich manipulation)
+            // Note: requires firmware >= 2.6.103 and F/T sensor installed
+            bool ft_collision_detection = false;
+            bool ft_collision_rebound = false;
+            node_->get_parameter_or("ft_collision_detection", ft_collision_detection, false);
+            node_->get_parameter_or("ft_collision_rebound", ft_collision_rebound, false);
+
+            int ft_det_ret = arm->set_ft_collision_detection(ft_collision_detection ? 1 : 0);
+            int ft_reb_ret = arm->set_ft_collision_rebound(ft_collision_rebound ? 1 : 0);
+
+            if (ft_det_ret == 0 && ft_reb_ret == 0) {
+                RCLCPP_INFO(node_->get_logger(),
+                    "F/T collision settings applied: detection=%d, rebound=%d",
+                    ft_collision_detection ? 1 : 0, ft_collision_rebound ? 1 : 0);
+            } else {
+                RCLCPP_WARN(node_->get_logger(),
+                    "F/T collision settings skipped (no sensor or firmware < 2.6.103): detection_ret=%d, rebound_ret=%d",
+                    ft_det_ret, ft_reb_ret);
+            }
+
+            // Reduced mode setting (default: disabled for full speed operation)
+            bool reduced_mode = false;
+            node_->get_parameter_or("reduced_mode", reduced_mode, false);
+            arm->set_reduced_mode(reduced_mode);
+            RCLCPP_INFO(node_->get_logger(),
+                "Reduced mode: %s (speed limits %s)",
+                reduced_mode ? "ON" : "OFF",
+                reduced_mode ? "active" : "disabled");
+        } else {
+            RCLCPP_INFO(node_->get_logger(), "override_webui=false: Using Web UI settings (no overrides applied)");
+        }
 
         // ============================================================
         // CONTACT MODE VERIFICATION: Read back all safety settings

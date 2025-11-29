@@ -66,16 +66,20 @@ def launch_setup(context, *args, **kwargs):
     robot_type = LaunchConfiguration('robot_type', default='xarm')
     extra_robot_api_params_path = LaunchConfiguration('extra_robot_api_params_path', default='')
 
-    # Contact mode parameters (default: disabled for contact-rich manipulation)
+    # Contact mode parameters
+    # override_webui: if true, apply contact mode settings; if false, use Web UI settings
+    override_webui = LaunchConfiguration('override_webui', default=False)
+    # SDK pre-checks (only used if override_webui=true)
     check_tcp_limit = LaunchConfiguration('check_tcp_limit', default=False)
     check_joint_limit = LaunchConfiguration('check_joint_limit', default=False)
+    # Collision settings (only used if override_webui=true)
     collision_sensitivity = LaunchConfiguration('collision_sensitivity', default=0)
     collision_rebound = LaunchConfiguration('collision_rebound', default=False)
     self_collision_detection = LaunchConfiguration('self_collision_detection', default=False)
-    # F/T sensor collision (requires firmware >= 2.6.103 and F/T sensor installed)
+    # F/T sensor collision (only used if override_webui=true, requires firmware >= 2.6.103)
     ft_collision_detection = LaunchConfiguration('ft_collision_detection', default=False)
     ft_collision_rebound = LaunchConfiguration('ft_collision_rebound', default=False)
-    # Reduced mode (speed/workspace limits)
+    # Reduced mode (only used if override_webui=true)
     reduced_mode = LaunchConfiguration('reduced_mode', default=False)
     
     robot_params = generate_robot_api_params(
@@ -107,6 +111,7 @@ def launch_setup(context, *args, **kwargs):
                 'default_gripper_baud': default_gripper_baud,
                 'joint_states_rate': joint_states_rate,
                 # Contact mode parameters
+                'override_webui': override_webui,
                 'check_tcp_limit': check_tcp_limit,
                 'check_joint_limit': check_joint_limit,
                 'collision_sensitivity': collision_sensitivity,
