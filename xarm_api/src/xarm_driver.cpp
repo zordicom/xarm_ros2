@@ -258,6 +258,15 @@ namespace xarm_api
                 ft_det_ret, ft_reb_ret);
         }
 
+        // Reduced mode setting (default: disabled for full speed operation)
+        bool reduced_mode = false;
+        node_->get_parameter_or("reduced_mode", reduced_mode, false);
+        arm->set_reduced_mode(reduced_mode);
+        RCLCPP_INFO(node_->get_logger(),
+            "Reduced mode: %s (speed limits %s)",
+            reduced_mode ? "ON" : "OFF",
+            reduced_mode ? "active" : "disabled");
+
         // ============================================================
         // CONTACT MODE VERIFICATION: Read back all safety settings
         // ============================================================
@@ -281,16 +290,24 @@ namespace xarm_api
             "  F/T collision (robot reports): detection=%d (want 0), rebound=%d (want 0)",
             ft_det_verify, ft_reb_verify);
 
+        // Reduced mode (read back via getter)
+        int reduced_mode_verify = -1;
+        arm->get_reduced_mode(&reduced_mode_verify);
+        RCLCPP_INFO(node_->get_logger(),
+            "  Reduced mode (robot reports): %d (0=on, 1=off, want 1)",
+            reduced_mode_verify);
+
         // Summary
         bool all_disabled = (arm->collision_sensitivity == 0) &&
                             (ft_det_verify == 0 || ft_det_verify == -1) &&
-                            (ft_reb_verify == 0 || ft_reb_verify == -1);
+                            (ft_reb_verify == 0 || ft_reb_verify == -1) &&
+                            (reduced_mode_verify == 1);
         if (all_disabled) {
             RCLCPP_INFO(node_->get_logger(),
-                "  ✓ CONTACT MODE ACTIVE: All collision detection disabled");
+                "  ✓ CONTACT MODE ACTIVE: All safety limits disabled");
         } else {
             RCLCPP_WARN(node_->get_logger(),
-                "  ✗ CONTACT MODE INCOMPLETE: Some collision detection may still be active");
+                "  ✗ CONTACT MODE INCOMPLETE: Some safety limits may still be active");
         }
         RCLCPP_INFO(node_->get_logger(), "=================================");
 

@@ -61,7 +61,7 @@ ufactory_driver:
       set_bio_gripper_speed: false
       set_collision_rebound: true       # Enabled for contact mode configuration
       set_fence_mode: false
-      set_reduced_mode: false
+      set_reduced_mode: true        # Enabled for contact mode configuration
       set_self_collision_detection: true  # Enabled for contact mode configuration
       set_simulation_robot: false
       set_baud_checkset_enable: false

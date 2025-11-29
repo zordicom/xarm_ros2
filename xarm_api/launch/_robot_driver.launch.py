@@ -75,6 +75,8 @@ def launch_setup(context, *args, **kwargs):
     # F/T sensor collision (requires firmware >= 2.6.103 and F/T sensor installed)
     ft_collision_detection = LaunchConfiguration('ft_collision_detection', default=False)
     ft_collision_rebound = LaunchConfiguration('ft_collision_rebound', default=False)
+    # Reduced mode (speed/workspace limits)
+    reduced_mode = LaunchConfiguration('reduced_mode', default=False)
     
     robot_params = generate_robot_api_params(
         os.path.join(get_package_share_directory('xarm_api'), 'config', 'xarm_params.yaml'),
@@ -112,6 +114,7 @@ def launch_setup(context, *args, **kwargs):
                 'self_collision_detection': self_collision_detection,
                 'ft_collision_detection': ft_collision_detection,
                 'ft_collision_rebound': ft_collision_rebound,
+                'reduced_mode': reduced_mode,
             },
         ]
     )
