@@ -238,6 +238,62 @@ namespace xarm_api
             "Robot reports: collision_sensitivity=%d, teach_sensitivity=%d",
             arm->collision_sensitivity, arm->teach_sensitivity);
 
+        // F/T sensor collision settings (default: disabled for contact-rich manipulation)
+        // Note: requires firmware >= 2.6.103 and F/T sensor installed
+        bool ft_collision_detection = false;
+        bool ft_collision_rebound = false;
+        node_->get_parameter_or("ft_collision_detection", ft_collision_detection, false);
+        node_->get_parameter_or("ft_collision_rebound", ft_collision_rebound, false);
+
+        int ft_det_ret = arm->set_ft_collision_detection(ft_collision_detection ? 1 : 0);
+        int ft_reb_ret = arm->set_ft_collision_rebound(ft_collision_rebound ? 1 : 0);
+
+        if (ft_det_ret == 0 && ft_reb_ret == 0) {
+            RCLCPP_INFO(node_->get_logger(),
+                "F/T collision settings applied: detection=%d, rebound=%d",
+                ft_collision_detection ? 1 : 0, ft_collision_rebound ? 1 : 0);
+        } else {
+            RCLCPP_WARN(node_->get_logger(),
+                "F/T collision settings skipped (no sensor or firmware < 2.6.103): detection_ret=%d, rebound_ret=%d",
+                ft_det_ret, ft_reb_ret);
+        }
+
+        // ============================================================
+        // CONTACT MODE VERIFICATION: Read back all safety settings
+        // ============================================================
+        RCLCPP_INFO(node_->get_logger(), "=== CONTACT MODE VERIFICATION ===");
+
+        // SDK pre-checks (client-side, not readable from robot)
+        RCLCPP_INFO(node_->get_logger(),
+            "  SDK pre-checks: check_tcp_limit=%d, check_joint_limit=%d",
+            check_tcp_limit ? 1 : 0, check_joint_limit ? 1 : 0);
+
+        // Collision settings (read from robot report data)
+        RCLCPP_INFO(node_->get_logger(),
+            "  Collision (robot reports): sensitivity=%d (want 0), teach_sensitivity=%d",
+            arm->collision_sensitivity, arm->teach_sensitivity);
+
+        // F/T collision settings (read back via getter)
+        int ft_det_verify = -1, ft_reb_verify = -1;
+        arm->get_ft_collision_detection(&ft_det_verify);
+        arm->get_ft_collision_rebound(&ft_reb_verify);
+        RCLCPP_INFO(node_->get_logger(),
+            "  F/T collision (robot reports): detection=%d (want 0), rebound=%d (want 0)",
+            ft_det_verify, ft_reb_verify);
+
+        // Summary
+        bool all_disabled = (arm->collision_sensitivity == 0) &&
+                            (ft_det_verify == 0 || ft_det_verify == -1) &&
+                            (ft_reb_verify == 0 || ft_reb_verify == -1);
+        if (all_disabled) {
+            RCLCPP_INFO(node_->get_logger(),
+                "  ✓ CONTACT MODE ACTIVE: All collision detection disabled");
+        } else {
+            RCLCPP_WARN(node_->get_logger(),
+                "  ✗ CONTACT MODE INCOMPLETE: Some collision detection may still be active");
+        }
+        RCLCPP_INFO(node_->get_logger(), "=================================");
+
         int err_warn[2] = {0};
         int ret = arm->get_err_warn_code(err_warn);
         if (err_warn[0] != 0) {
