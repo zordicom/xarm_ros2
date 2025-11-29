@@ -65,6 +65,13 @@ def launch_setup(context, *args, **kwargs):
     show_rviz = LaunchConfiguration('show_rviz', default=False)
     robot_type = LaunchConfiguration('robot_type', default='xarm')
     extra_robot_api_params_path = LaunchConfiguration('extra_robot_api_params_path', default='')
+
+    # Contact mode parameters (default: disabled for contact-rich manipulation)
+    check_tcp_limit = LaunchConfiguration('check_tcp_limit', default=False)
+    check_joint_limit = LaunchConfiguration('check_joint_limit', default=False)
+    collision_sensitivity = LaunchConfiguration('collision_sensitivity', default=0)
+    collision_rebound = LaunchConfiguration('collision_rebound', default=False)
+    self_collision_detection = LaunchConfiguration('self_collision_detection', default=False)
     
     robot_params = generate_robot_api_params(
         os.path.join(get_package_share_directory('xarm_api'), 'config', 'xarm_params.yaml'),
@@ -94,6 +101,12 @@ def launch_setup(context, *args, **kwargs):
                 'baud_checkset': baud_checkset,
                 'default_gripper_baud': default_gripper_baud,
                 'joint_states_rate': joint_states_rate,
+                # Contact mode parameters
+                'check_tcp_limit': check_tcp_limit,
+                'check_joint_limit': check_joint_limit,
+                'collision_sensitivity': collision_sensitivity,
+                'collision_rebound': collision_rebound,
+                'self_collision_detection': self_collision_detection,
             },
         ]
     )

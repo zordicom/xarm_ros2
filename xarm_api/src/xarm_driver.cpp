@@ -183,15 +183,22 @@ namespace xarm_api
         
         RCLCPP_INFO(node_->get_logger(), "baud_checkset: %d, default_gripper_baud: %d", baud_checkset, default_gripper_baud);
 
+        // Contact mode: SDK pre-check parameters (default: disabled for contact-rich manipulation)
+        bool check_tcp_limit = false;
+        bool check_joint_limit = false;
+        node_->get_parameter_or("check_tcp_limit", check_tcp_limit, false);
+        node_->get_parameter_or("check_joint_limit", check_joint_limit, false);
+        RCLCPP_INFO(node_->get_logger(), "SDK pre-checks: tcp_limit=%d, joint_limit=%d", check_tcp_limit, check_joint_limit);
+
         _init_publisher();
         setlinebuf(stdout);
 
         arm = new XArmAPI(
-            server_ip, 
+            server_ip,
             true, // is_radian
             true, // do_not_open
-            true, // check_tcp_limit
-            true, // check_joint_limit
+            check_tcp_limit, // check_tcp_limit (parameterized)
+            check_joint_limit, // check_joint_limit (parameterized)
             true, // check_cmdnum_limit
             false, // check_robot_sn
             true, // check_is_ready
@@ -209,6 +216,27 @@ namespace xarm_api
         arm->register_connect_changed_callback(std::bind(&XArmDriver::_report_connect_changed_callback, this, std::placeholders::_1, std::placeholders::_2));
         arm->register_report_data_callback(std::bind(&XArmDriver::_report_data_callback, this, std::placeholders::_1));
         arm->connect();
+
+        // Contact mode: Hardware collision detection settings (default: disabled for contact-rich manipulation)
+        int collision_sensitivity = 0;
+        bool collision_rebound = false;
+        bool self_collision_detection = false;
+        node_->get_parameter_or("collision_sensitivity", collision_sensitivity, 0);
+        node_->get_parameter_or("collision_rebound", collision_rebound, false);
+        node_->get_parameter_or("self_collision_detection", self_collision_detection, false);
+
+        arm->set_collision_sensitivity(collision_sensitivity);
+        arm->set_collision_rebound(collision_rebound ? 1 : 0);
+        arm->set_self_collision_detection(self_collision_detection ? 1 : 0);
+
+        RCLCPP_INFO(node_->get_logger(),
+            "Collision settings applied: sensitivity=%d, rebound=%d, self_collision=%d",
+            collision_sensitivity, collision_rebound ? 1 : 0, self_collision_detection ? 1 : 0);
+
+        // Diagnostic: Log what the robot reports for collision/teach sensitivity
+        RCLCPP_INFO(node_->get_logger(),
+            "Robot reports: collision_sensitivity=%d, teach_sensitivity=%d",
+            arm->collision_sensitivity, arm->teach_sensitivity);
 
         int err_warn[2] = {0};
         int ret = arm->get_err_warn_code(err_warn);
