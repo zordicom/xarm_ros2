@@ -60,6 +60,10 @@ Contact mode disables xArm safety features to allow contact-rich manipulation (i
 |---------|---------|-------------|
 | `fence_mode` | true | Workspace boundary (±200mm cube) |
 
+> **Note**: `fence_mode` is managed by `zordi_arm/xarm7_node.py`:
+> - Disabled on arm reset
+> - Re-enabled with custom `tcp_boundary` when state is set
+
 ## Implementation
 
 ### Files Modified
